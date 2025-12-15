@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>House Monitor</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .button-container { margin-bottom: 20px; }
+        .button-container button { padding: 10px 15px; margin: 0 5px; cursor: pointer; }
+        #myDiv { width: 90%; height: 500px; }
+    </style>
+    <script src="housewatch.js"></script>
+</head>
+<body>
+    <h1>HouseWatch</h1>
+
+    <div class="button-container">
+        <button onclick="updateRange('full')">Full Range</button>
+        <button onclick="updateRange('day')">Previous 1 Day</button>
+        <button onclick="updateRange('week')">Previous 1 Week</button>
+    </div>
+
+    <div id="divTemp"></div>
+    <div id="divHumd"></div>
+    <div id="divWatr"></div>
+
+    <script>
+        const traceTemp1 = {
+            x: times,
+            y: temp1s,
+            mode: 'lines',
+            name: 'T1',
+            line: {color: "red"},
+        };
+        const traceTemp2 = {
+            x: times,
+            y: temp2s,
+            mode: 'lines',
+            name: 'T2',
+            line: {color: "orangered"},
+        };
+        const traceHumd1 = {
+            x: times,
+            y: humd1s,
+            mode: 'lines',
+            name: 'H1',
+            line: {color: "teal"},
+        };
+        const traceHumd2 = {
+            x: times,
+            y: humd2s,
+            mode: 'lines',
+            name: 'H2',
+            line: {color: "lightSeaGreen"},
+        };
+        const traceWatr1 = {
+            x: times,
+            y: watr1s,
+            mode: 'lines',
+            name: 'W1',
+            line: {color: "darkBlue"},
+        };
+        const traceWatr2 = {
+            x: times,
+            y: watr2s,
+            mode: 'lines',
+            name: 'W2',
+            line: {color: "mediumBlue"},
+        };
+        const layout = {
+            //title: 'Time Series Plot',
+            xaxis: {
+                type: 'date',
+                rangeslider: {}
+            },
+            yaxis: {
+                title: 'Value'
+            }
+        };
+
+        Plotly.newPlot('divTemp', [traceTemp1, traceTemp2], {
+            title: 'Temperature',
+            xaxis: {type: 'date', rangeslider: {}},
+            yaxis: {title: 'F'}
+            });
+        Plotly.newPlot('divHumd', [traceHumd1, traceHumd2], {
+            title: 'Humidity',
+            xaxis: {type: 'date', rangeslider: {}},
+            yaxis: {title: '%'}
+            });
+        Plotly.newPlot('divWatr', [traceWatr1, traceWatr2], {
+            title: 'Water',
+            xaxis: {type: 'date', rangeslider: {}},
+            yaxis: {title: '0-1023'}
+            });
+
+        function updateRange(rangeType) {
+            const now = new Date();
+            let x0, x1;
+
+            function stime_to_dtime(stime) {
+                const [YMD,hm] = stime.split(' ');
+                const [Y, M, D] = YMD.split('-').map(Number);
+                const [h, m] = hm.split(':').map(Number);
+                return new Date(Y, M-1, D, h, m);
+            }
+
+            function dtime_to_stime(dtime) {
+                const padTwoDigits = (num) => String(num).padStart(2, '0');
+                const Y = dtime.getFullYear();
+                const M = padTwoDigits(dtime.getMonth() + 1);
+                const D = padTwoDigits(dtime.getDate());
+                const h = padTwoDigits(dtime.getHours());
+                const m = padTwoDigits(dtime.getMinutes());
+                return `${Y}-${M}-${D} ${h}:${m}`;
+            }
+
+            if (rangeType === 'full') {
+                x0 = times[0];
+                x1 = times[times.length - 1];
+            } else if (rangeType === 'day') {
+                x1 = times[times.length - 1];
+                let x0dt = stime_to_dtime(x1);
+                x0dt.setDate(x0dt.getDate() - 1);
+                x0 = dtime_to_stime(x0dt);
+            } else if (rangeType === 'week') {
+                x1 = times[times.length - 1];
+                let x0dt = stime_to_dtime(x1);
+                x0dt.setDate(x0dt.getDate() - 7);
+                x0 = dtime_to_stime(x0dt);
+            }
+
+            Plotly.relayout('divTemp', {
+                'xaxis.range': [x0, x1]
+            });            
+            Plotly.relayout('divHumd', {
+                'xaxis.range': [x0, x1]
+            });
+            Plotly.relayout('divWatr', {
+                'xaxis.range': [x0, x1]
+            });
+        }
+    </script>
+</body>
+</html>
